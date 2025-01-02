@@ -10,6 +10,7 @@ SAVE_DIR="data"
 DATASET_NAME="google/civil_comments"
 MODEL_NAME="SnypzZz/Llama2-13b-Language-translate"
 TRANSLATED_CSV="data/translated/translated_civil_comments_google.csv"
+LIMIT?=0
 
 download:
 	python -m src.preprocess.download $(DATASET_NAME) $(SAVE_DIR)
@@ -18,4 +19,7 @@ translate:
 	python -m src.preprocess.translate
 
 split:
-	python -m src.preprocess.sets_preparations $(TRANSLATED_CSV) $(SAVE_DIR)
+	python -m src.preprocess.sets_preparations $(TRANSLATED_CSV) $(SAVE_DIR) $(LIMIT)
+
+train:
+	python -m src.train.main
