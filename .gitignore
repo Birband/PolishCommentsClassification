@@ -5,3 +5,6 @@ keys/
 __pycache__/
 *.py[cod]
 *$py.class
+
+logs/
+models/
