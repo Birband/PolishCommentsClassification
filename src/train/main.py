@@ -7,14 +7,23 @@ from sklearn.metrics import f1_score
 import numpy as np
 from tqdm import tqdm
 from ..preprocess.sets_preparations import load_sets
+import os
 
-writer = SummaryWriter("logs")
+if not os.path.exists("logs"):
+    os.makedirs("logs")
+
+if not os.path.exists("models"):
+    os.makedirs("models")
+
+writer = SummaryWriter("logs/sanity_check")
 
 MODEL_NAME = "bert-base-multilingual-cased"
-MAX_LEN = 128
-BATCH_SIZE = 16
-EPOCHS = 3
-LEARNING_RATE = 2e-5
+MAX_LEN = 512
+BATCH_SIZE = 8
+EPOCHS = 32
+LEARNING_RATE = 2e-4
+
+writer.add_hparams({'MAX_LEN': MAX_LEN, 'BATCH_SIZE': BATCH_SIZE, 'EPOCHS': EPOCHS, 'LEARNING_RATE': LEARNING_RATE},{})
 
 train_df, val_df, test_df = load_sets("data/splits/")
 
@@ -122,13 +131,25 @@ for epoch in range(EPOCHS):
 
     train_labels = (train_labels > 0.05).astype(int)
     val_labels = (val_labels > 0.05).astype(int)
-    train_f1 = f1_score(train_labels, train_correct_preds, average="macro")
-    val_f1 = f1_score(val_labels, val_correct_preds, average="macro")
+    train_f1 = f1_score(train_labels, train_correct_preds, average="macro", zero_division=0)
+    val_f1 = f1_score(val_labels, val_correct_preds, average="macro", zero_division=0)
 
     writer.add_scalar("Loss/Train", train_loss, epoch)
     writer.add_scalar("Macro F1/Train", train_f1, epoch)
     writer.add_scalar("Macro F1/Val", val_f1, epoch)
 
     torch.save(model.state_dict(), f"models/model_{epoch}.pth")
+
+
+# Test the model
+test_dataset = ToxicCommentsDataset(test_df, tokenizer, MAX_LEN)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
+
+test_lables, test_preds = eval_model(model, test_loader, device)
+test_correct_preds = compare_predictions_to_truth(test_lables, test_preds, min_error=0.1)
+test_labels = (test_lables > 0.05).astype(int)
+test_f1 = f1_score(test_labels, test_correct_preds, average="macro", zero_division=0)
+
+writer.add_scalar("Macro F1/Test", test_f1, 0)
 
 writer.close()
