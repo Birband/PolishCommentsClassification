@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.tensorboard import SummaryWriter
 from transformers import BertTokenizer, BertForSequenceClassification
-from transformers import AdamW
+from torch.optim import AdamW
 from sklearn.metrics import f1_score
 import numpy as np
 from tqdm import tqdm
