@@ -23,6 +23,9 @@ BATCH_SIZE = 8
 EPOCHS = 32
 LEARNING_RATE = 2e-4
 
+# For checking F1 score
+MIN_ERROR = 0.05
+
 writer.add_hparams({'MAX_LEN': MAX_LEN, 'BATCH_SIZE': BATCH_SIZE, 'EPOCHS': EPOCHS, 'LEARNING_RATE': LEARNING_RATE},{})
 
 train_df, val_df, test_df = load_sets("data/splits/")
@@ -126,11 +129,13 @@ for epoch in range(EPOCHS):
     train_loss, train_labels, train_preds = train_epoch(model, train_loader, optimizer, device)
     val_labels, val_preds = eval_model(model, val_loader, device)
 
-    train_correct_preds = compare_predictions_to_truth(train_labels, train_preds, min_error=0.1)
-    val_correct_preds = compare_predictions_to_truth(val_labels, val_preds, min_error=0.1)
+    # train_correct_preds = compare_predictions_to_truth(train_labels, train_preds, min_error=0.1)
+    # val_correct_preds = compare_predictions_to_truth(val_labels, val_preds, min_error=0.1)
+    train_correct_preds = (train_preds > MIN_ERROR).astype(int)
+    val_correct_preds = (val_preds > MIN_ERROR).astype(int)
 
-    train_labels = (train_labels > 0.05).astype(int)
-    val_labels = (val_labels > 0.05).astype(int)
+    train_labels = (train_labels > MIN_ERROR).astype(int)
+    val_labels = (val_labels > MIN_ERROR).astype(int)
     train_f1 = f1_score(train_labels, train_correct_preds, average="macro", zero_division=0)
     val_f1 = f1_score(val_labels, val_correct_preds, average="macro", zero_division=0)
 
@@ -141,13 +146,13 @@ for epoch in range(EPOCHS):
     torch.save(model.state_dict(), f"models/model_{epoch}.pth")
 
 
-# Test the model
 test_dataset = ToxicCommentsDataset(test_df, tokenizer, MAX_LEN)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE)
 
 test_lables, test_preds = eval_model(model, test_loader, device)
-test_correct_preds = compare_predictions_to_truth(test_lables, test_preds, min_error=0.1)
-test_labels = (test_lables > 0.05).astype(int)
+# test_correct_preds = compare_predictions_to_truth(test_lables, test_preds, min_error=0.1)
+test_correct_preds = (test_preds > MIN_ERROR).astype(int)
+test_labels = (test_lables > MIN_ERROR).astype(int)
 test_f1 = f1_score(test_labels, test_correct_preds, average="macro", zero_division=0)
 
 writer.add_scalar("Macro F1/Test", test_f1, 0)
