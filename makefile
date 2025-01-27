@@ -8,7 +8,6 @@ default:
 
 SAVE_DIR="data"
 DATASET_NAME="google/civil_comments"
-MODEL_NAME="SnypzZz/Llama2-13b-Language-translate"
 TRANSLATED_CSV="data/translated/translated_civil_comments_google.csv"
 LIMIT?=0
 
